@@ -1,8 +1,8 @@
 # Unclaimed property search tool
 
-Code to cross-reference contacts with the California Unclaimed Property
-database. Pretty barebones; this is mostly a personal exercise in learning more
-SQL.
+Query to cross-reference contacts with the California Unclaimed Property
+database. Pretty barebones; this is a personal exercise in performance tuning
+and learning more SQL.
 
 
 ## Context
@@ -37,9 +37,32 @@ being.
 
 ## Usage
 
-1. Download the UCPO database
-2. Download contacts as Outlook CSV
-3. Run query.sql
+You'll need:
+* A copy of the unclaimed property record database saved as
+  `unclaimed_property.csv`.
+* A CSV of your contacts in Outlook format saved as `contacts.csv`. (Check
+  unclaimed.sql for the expected format)
+* sqlite3
+* xsv
+
+### Downloading the property database
+
+```
+curl 'https://dpupd.sco.ca.gov/00_All_Records.zip' > tmp.zip && unzip tmp.zip && rm tmp.zip
+```
+
+### Actually running the thing
+
+```
+sqlite3 unclaimed.db < unclaimed.sql
+```
+
+Alternatively, if you have enough RAM (about half of the size of the CSV), you
+can try building the SQLite database entirely in memory:
+
+```
+sqlite3 < unclaimed.sql
+```
 
 
 ## Things I want to do next
@@ -53,6 +76,7 @@ being.
    digest. `.import` supports reading from stdout(?), so maybe write something
    to only present provided columns. This might also have a performance impact?
 3. Add a way to ignore known false positives.
+4. Trim data loaded into SQLite so that the entire database can live in memory.
 
 
 ## Things I learned
@@ -91,9 +115,97 @@ actually testing it (which I probably won't do). But it probably is.
 
 ### Indexes
 
-More basic SQL.
+More basic SQL. Some notes:
+
+* Sometimes you need to run `ANALYZE` to get SQLite to pick up on indexes.
+* You can have multi-column ("covered") indexes.
+* It's better to load your data first, then create an index. Be mindful of this,
+  especially because indexes can make INSERT and UPDATE expensive.
+* Binary trees!
 
 
 ## Benchmarks
 
-Still thinking about the best way to organize benchmarks between iterations.
+Played around with some recommended performance tuning approaches I found online
+(and some guesses). Most variations were micro-optimizations that generally
+didn't change runtime substantially. I left the ones I liked in place.
+
+In retrospect, it probably would have been a good idea to show the code for each
+variation. I'll do that going forward.
+
+
+### Initial commit
+
+```
+real	173m40.322s
+user	155m52.334s
+sys	16m43.607s
+```
+
+### With ifnull
+
+Veridct: keep. Negligible performance improvement, but I'm lazy.
+
+```
+Executed in  170.54 mins    fish           external
+   usr time  153.62 mins  375.00 micros  153.62 mins
+   sys time   16.35 mins    0.00 micros   16.35 mins
+```
+
+### With an explicit `SELECT ...` instead of `SELECT *`
+
+Veridct: keep. Negligible performance improvement, but the output is easier to
+read.
+
+```
+Executed in  169.88 mins    fish           external
+   usr time  152.56 mins  184.00 micros  152.56 mins
+   sys time   16.59 mins   40.00 micros   16.59 mins
+```
+
+### With `WHERE` conditions moved to `ON`
+
+Veridct: keep. Outperforms the previous two approaches, though I still need to
+understand why. A 15 minute improvement is _okay_ though for me still kind of in
+the range of a micro-optimization (at least until I understand what's going on).
+
+```
+Executed in  153.72 mins    fish           external
+   usr time  137.19 mins  172.00 micros  137.19 mins
+   sys time   16.24 mins   35.00 micros   16.24 mins
+```
+
+### With two queries combined into a single query
+
+Verdict: revert. I thought there was a chance this would be faster since the
+`property` table might only have to be traversed once... I don't think this was
+correct. I want to revisit this and look at the query with `EXPLAIN QUERY PLAN`
+and see what the difference is.
+
+```
+Executed in  186.25 mins    fish           external
+   usr time  185.80 mins  242.00 micros  185.80 mins
+   sys time    0.26 mins   48.00 micros    0.26 mins
+```
+
+### With tables created manually so I can specify COLLATE NOCASE...
+
+...per-column instead of per-query
+
+Veridct: keep. It's slower, but I am kind of lazy, and may revert this later.
+Because I don't need to preserve the original case of the data, I wonder if it
+would be faster to just make everything uppercase.
+
+```
+Executed in  157.31 mins    fish           external
+   usr time  138.38 mins  453.00 micros  138.38 mins
+   sys time   18.14 mins   86.00 micros   18.14 mins
+```
+
+### With concurrency and integrity protections disabled
+
+Veridct: keep. Slower overall, but it makes building the database itself a lot
+faster, so I'll keep it for now.
+
+(I accidentally lost the `time` output, but it was a little longer than the
+above.)
