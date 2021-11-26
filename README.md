@@ -61,7 +61,7 @@ Alternatively, if you have enough RAM (about half of the size of the CSV), you
 can try building the SQLite database entirely in memory:
 
 ```
-sqlite3 < unclaimed.sql
+sqlite3 ':memory:' < unclaimed.sql
 ```
 
 
@@ -76,7 +76,7 @@ sqlite3 < unclaimed.sql
    digest. `.import` supports reading from stdout(?), so maybe write something
    to only present provided columns. This might also have a performance impact?
 3. Add a way to ignore known false positives.
-4. Trim data loaded into SQLite so that the entire database can live in memory.
+4. ~~Trim data loaded into SQLite so that the entire database can live in memory.~~
 
 
 ## Things I learned
@@ -122,6 +122,25 @@ More basic SQL. Some notes:
 * It's better to load your data first, then create an index. Be mindful of this,
   especially because indexes can make INSERT and UPDATE expensive.
 * Binary trees!
+
+
+### `EXPLAIN` and `EXPLAIN QUERY PLAN`
+
+The gist:
+
+* Queries are evaluated / compiled / translated into "query plans".
+* The query plan is what is executed.
+* Seeing the query plan is very quick and can give me a window into query
+  performance without actually running the entire query.
+
+Didn't start doing this until late in the game, and I kind of want to go back
+and look at all the query plans for these queries.
+
+
+### `.timer on`
+
+SQLite has a built in query timer, which would have been better to use so I
+could see which operations in particular were affected by the changes I made.
 
 
 ## Benchmarks
@@ -209,3 +228,45 @@ faster, so I'll keep it for now.
 
 (I accidentally lost the `time` output, but it was a little longer than the
 above.)
+
+### All of the above, with only relevant columns imported
+
+Verdict: keep. Already decently faster even if the database is on disk but the
+real purpose of this change is to reduce the size of the database so it's small
+enough to fit in memory.
+
+#### Database built on disk
+
+```
+Executed in  144.72 mins    fish           external
+   usr time  135.17 mins    0.00 micros  135.17 mins
+      sys time   10.12 mins  520.00 micros   10.12 mins
+```
+
+#### Database built in memory
+
+This is really weird to me, for obvious reasons. Still digging into what the
+problem is here.
+
+```
+Executed in  153.93 mins    fish           external
+   usr time  154.52 mins  218.00 micros  154.52 mins
+   sys time    0.14 mins   31.00 micros    0.14 mins
+```
+
+## In retrospect
+
+If I did this again from the beginning, I would:
+
+* Better document the changes that I made.
+* Use `COUNT(*)` to ensure that queries were returning the same results each
+  time with the changes I made.
+* Use `.timer` and some arithmetic to better evaluate impact of the changes I
+  made.
+* Use `EXPLAIN QUERY PLAN` to get some window into how my changes would impact
+  performance instead of throwing something at the wall then coming back in two
+  hours to see if it stuck.
+
+Lessons learned.
+I'm not going to run the tests again, though, because I don't really want to.
+
