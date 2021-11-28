@@ -33,8 +33,8 @@ CREATE TABLE "people"(
 -- Import the CSVs, skipping the header row (which would otherwise be
 -- imported since the tables we specified already exist.
 -- TODO: Brittle coupling with table, headers
-.import --csv --skip 1 '| xsv select PROPERTY_ID,PROPERTY_TYPE,CASH_REPORTED,SHARES_REPORTED,OWNER_NAME,OWNER_STREET_1,OWNER_CITY,OWNER_STATE,OWNER_ZIP,HOLDER_NAME unclaimed_property.csv'  property
-.import --csv --skip 1 '| xsv select "First Name,Last Name,Home Street,Home City,Home State,Home Postal Code" contacts.csv' people
+.import --csv --skip 1 '| xsv select PROPERTY_ID,PROPERTY_TYPE,CASH_REPORTED,SHARES_REPORTED,OWNER_NAME,OWNER_STREET_1,OWNER_CITY,OWNER_STATE,OWNER_ZIP,HOLDER_NAME property.csv'  property
+.import --csv --skip 1 '| xsv select "First Name,Last Name,Home Street,Home City,Home State,Home Postal Code" people.csv' people
 
 -- Find properties with familiar addresses
 SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1,  OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME

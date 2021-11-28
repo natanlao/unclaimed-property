@@ -39,8 +39,8 @@ being.
 
 You'll need:
 * A copy of the unclaimed property record database saved as
-  `unclaimed_property.csv`.
-* A CSV of your contacts in Outlook format saved as `contacts.csv`. (Check
+  `property.csv`.
+* A CSV of your contacts in Outlook format saved as `people.csv`. (Check
   unclaimed.sql for the expected format)
 * sqlite3
 * xsv
