@@ -41,12 +41,8 @@ CREATE INDEX property_address ON property (OWNER_STREET_1);
 SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1, OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME
 FROM property
 INNER JOIN people
-ON property.OWNER_STREET_1 LIKE people.`Home Street`
-    AND ifnull(people.`Home Street`, '') != '';
--- Using ifnull is supposedly better than checking length, but I'm not sold.
--- Tests don't show a big improvement either, but I'm too lazy to change it
--- back. .import doesn't insert NULL values (just empty strings) and I wonder
--- if it would be faster to just check equality against an empty string.
+ON property.OWNER_STREET_1 = people.`Home Street`
+   AND people.`Home Street` != '';
 
 -- Find properties with familiar names
 CREATE INDEX property_owner ON property (OWNER_NAME);
@@ -55,13 +51,12 @@ FROM property
 INNER JOIN people
 ON (property.OWNER_NAME = people.`First Name` || ' ' || people.`Last Name`
     OR property.OWNER_NAME = people.`Last Name` || ' ' || people.`First Name`)
-   AND ifnull(people.`First Name`, '') != ''
-   AND ifnull(people.`Last Name`, '') != ''
-   AND ifnull(property.OWNER_NAME, '') != '';
+   AND people.`First Name` != ''
+   AND people.`Last Name` != ''
+   AND property.OWNER_NAME != '';
 
 -- TODO: Is it possible to remove LIKE on OWNER_STREET_1?
 -- TODO: Does casting PROPERTY_ID as INTEGER and setting it as primary key change anything?
 -- TODO: Try using IN for second query
--- TODO: Try updating empty strings to NULL values / checkig only string equality
 -- TODO: Try abandoning COLLATE NOCASE and make everything uppercase?
 -- TODO: Account for middle initial in name lookup
