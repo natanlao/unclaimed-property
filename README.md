@@ -38,12 +38,16 @@ being.
 ## Usage
 
 You'll need:
-* A copy of the unclaimed property record database saved as
-  `property.csv`.
-* A CSV of your contacts in Outlook format saved as `people.csv`. (Check
-  unclaimed.sql for the expected format)
-* sqlite3
-* xsv
+
+* a copy of the unclaimed property record database saved as
+  `property.csv`,
+
+* a CSV of your contacts in Outlook format saved as `people.csv`. (Check
+  unclaimed.sql for the expected format),
+
+* sqlite3, and
+
+* xsv.
 
 ### Downloading the property database
 
@@ -58,7 +62,7 @@ sqlite3 unclaimed.db < unclaimed.sql
 ```
 
 Alternatively, if you have enough RAM (about half of the size of the CSV), you
-can try building the SQLite database entirely in memory:
+can build the SQLite database entirely in memory:
 
 ```
 sqlite3 ':memory:' < unclaimed.sql
@@ -272,11 +276,26 @@ Executed in  251.01 secs    fish           external
 Those times are with the database built on disk. It is faster than doing so in
 memory. I still don't understand why.
 
-An interesting detail is that in the process of adding indexes, I tightenedd the
-address query criterion from `property.OWNER_STREET_1 LIKE Home Street' to
+An interesting detail is that in the process of adding indexes, I tightened the
+address query criterion from `property.OWNER_STREET_1 LIKE Home Street` to
 `property.OWNER_STREET_1 = Home Street` and got the same results back. Maybe
 this is a fluke. I have more work to do with addresses, anyway, so I'll leave it
 there for now.
+
+### Importing all data to SQLite capitalized...
+
+...instead of using `COLLATE NOCASE` for case-insensitive queries. Easy, since
+we don't care about preserving the case of the data.
+
+```
+Executed in  206.69 secs    fish           external
+   usr time  227.06 secs  158.00 micros  227.06 secs
+   sys time   22.69 secs   50.00 micros   22.69 secs
+```
+
+Going to keep this, not necessarily for performance (though shaving some 30
+seconds off index creation is nice) but because it lets me lean on `.import` for
+table creation instead of having to specify everything explicitly.
 
 ## In retrospect
 
