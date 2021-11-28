@@ -11,12 +11,12 @@ PRAGMA locking_mode = exclusive;
 .timer on
 
 -- Find properties with familiar addresses
-CREATE INDEX property_address ON property (OWNER_STREET_1);
+CREATE INDEX property_address ON property (OWNER_STREET_1, OWNER_CITY);
 SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1, OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME
 FROM property
 INNER JOIN people
 ON property.OWNER_STREET_1 = people.`Home Street`
-   AND people.`Home Street` != '';
+   AND people.`Home Street` != '' AND people.`Home City` = property.OWNER_CITY;
 
 -- Find properties with familiar names
 CREATE INDEX property_owner ON property (OWNER_NAME);
