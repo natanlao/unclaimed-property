@@ -254,6 +254,30 @@ Executed in  153.93 mins    fish           external
    sys time    0.14 mins   31.00 micros    0.14 mins
 ```
 
+### Actually using indexes
+
+In my defense, I tried using indexes at the very beginning and I couldn't get it
+to work -- any query that utilized an index would return no results, so I
+decided I would try again later.
+
+I tried it again, and performance, as you might expect, changed drastically. I
+still have no idea what I did differently:
+
+```
+Executed in  251.01 secs    fish           external
+   usr time  265.82 secs  189.00 micros  265.82 secs
+   sys time   17.25 secs   36.00 micros   17.25 secs
+```
+
+Those times are with the database built on disk. It is faster than doing so in
+memory. I still don't understand why.
+
+An interesting detail is that in the process of adding indexes, I tightenedd the
+address query criterion from `property.OWNER_STREET_1 LIKE Home Street' to
+`property.OWNER_STREET_1 = Home Street` and got the same results back. Maybe
+this is a fluke. I have more work to do with addresses, anyway, so I'll leave it
+there for now.
+
 ## In retrospect
 
 If I did this again from the beginning, I would:

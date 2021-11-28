@@ -37,7 +37,8 @@ CREATE TABLE "people"(
 .import --csv --skip 1 '| xsv select "First Name,Last Name,Home Street,Home City,Home State,Home Postal Code" people.csv' people
 
 -- Find properties with familiar addresses
-SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1,  OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME
+CREATE INDEX property_address ON property (OWNER_STREET_1);
+SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1, OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME
 FROM property
 INNER JOIN people
 ON property.OWNER_STREET_1 LIKE people.`Home Street`
@@ -48,7 +49,8 @@ ON property.OWNER_STREET_1 LIKE people.`Home Street`
 -- if it would be faster to just check equality against an empty string.
 
 -- Find properties with familiar names
-SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1,  OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME
+CREATE INDEX property_owner ON property (OWNER_NAME);
+SELECT COUNT(*), PROPERTY_ID, PROPERTY_TYPE, CASH_REPORTED, SHARES_REPORTED, OWNER_NAME, OWNER_STREET_1, OWNER_CITY, OWNER_STATE, OWNER_ZIP, HOLDER_NAME
 FROM property
 INNER JOIN people
 ON (property.OWNER_NAME = people.`First Name` || ' ' || people.`Last Name`
@@ -57,9 +59,9 @@ ON (property.OWNER_NAME = people.`First Name` || ' ' || people.`Last Name`
    AND ifnull(people.`Last Name`, '') != ''
    AND ifnull(property.OWNER_NAME, '') != '';
 
--- TODO: Try an index on OWNER_NAME
 -- TODO: Is it possible to remove LIKE on OWNER_STREET_1?
 -- TODO: Does casting PROPERTY_ID as INTEGER and setting it as primary key change anything?
 -- TODO: Try using IN for second query
 -- TODO: Try updating empty strings to NULL values / checkig only string equality
 -- TODO: Try abandoning COLLATE NOCASE and make everything uppercase?
+-- TODO: Account for middle initial in name lookup
